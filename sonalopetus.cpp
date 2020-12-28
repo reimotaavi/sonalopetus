@@ -5,21 +5,24 @@
 using namespace std;
 
 // andmestruktruur puu tipu andmetega
-template <class Silt>
 class Tipp {
 
 public:
-	Silt silt;
-	Tipp<Silt>* vanem;
-	vector<Tipp<Silt>*> lapsed;
+	char tahemark;
+	map <char, Tipp*> lapsed;
+	bool sona_leitud;
+
+	Tipp () {
+		sona_leitud = false;
+	}
 };
 
 // andmestruktruur prefikspuu tippude ahelana
-template <class Silt>
 class Prefikspuu {
 
 public:
-    Tipp<Silt>* juur;
+	Tipp* juur;
+
 };
 
 int main(){
