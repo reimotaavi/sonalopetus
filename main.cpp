@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <limits>
+#include <fstream>
 
 using namespace std;
 
@@ -105,7 +107,8 @@ int valjasta(Puu* juur, const string query)
 
 void kuva_menuu(){
     cout << "1. Lisamine" << endl;
-    cout << "2. Otsimine" << endl;
+    cout << "2. Sonastik" << endl;
+    cout << "3. Otsimine" << endl;
 }
 
 int loe_valik(unsigned int &kasutaja_valik) {
@@ -117,7 +120,7 @@ int loe_valik(unsigned int &kasutaja_valik) {
         cout << "Sisestage valik: ";
         cin >> valik;
 
-        if (cin.fail() || valik < 0 || valik > 2 || valik != ceil(valik)) {
+        if (cin.fail() || valik < 0 || valik > 3 || valik != ceil(valik)) {
             cout << "Viga! Sisestage korrektne valik!" << endl;
             vigane_sisend = true;
             cin.clear();
@@ -129,10 +132,26 @@ int loe_valik(unsigned int &kasutaja_valik) {
     return kasutaja_valik;
 }
 
+void lisa_sonastik (string& failinimi, Puu* juur) {
+
+    string sona;
+    ifstream sisend (failinimi);
+
+    if (sisend.is_open()) {
+        while (sisend >> sona) {
+            lisa (juur, sona);
+        }
+    }
+    else {
+        cout << "Sellist faili ei leitud!" << endl;
+    }
+}
+
 int main(){
     struct Puu* juur = solm();
     unsigned int kasutaja_valik = 0;
     string sisend;
+    string failinimi;
     do {
         kuva_menuu();
         loe_valik(kasutaja_valik);
@@ -140,7 +159,13 @@ int main(){
             cout << "Sisesta sona, mida soovid lisada: ";
             cin >> sisend;
             lisa(juur, sisend);
-        } else if (kasutaja_valik == 2) {
+        }
+        if (kasutaja_valik == 2) {
+            cout << "Sisesta sonastiku failinimi: ";
+            getline(cin, failinimi);
+            lisa_sonastik (failinimi, juur);
+        }
+        if (kasutaja_valik == 3) {
             cout << "Sisesta sone, mida soovid otsida: ";
             cin >> sisend;
             valjasta(juur, sisend);
@@ -148,4 +173,3 @@ int main(){
     } while (kasutaja_valik != 0);
     cout << "Aitah, et kasutasid programmi!";
 }
-
