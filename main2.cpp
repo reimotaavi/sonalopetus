@@ -8,40 +8,103 @@
 
 using namespace std;
 
-static const int sona_pikkus = 26;
+static const int tahestiku_pikkus = 26;
+// inglise keele tähestiku pikkus
 
-// Andmestruktuur prefikspuu tipu jaoks
-struct Tipp{
+// andmestruktuur prefikspuu tipu jaoks
+class Tipp{
+
+public:
     // määrab kas puu servade järgi liikudes moodustub sõna või ei
     bool sona_leidub;
-    Tipp* lapsed[sona_pikkus];
+    // tipu lapsed
+    Tipp* lapsed[tahestiku_pikkus];
 };
 
-Tipp* uus_tipp(){
-    Tipp* indeks = new Tipp;
-    indeks->sona_leidub = false;
+// andmestruktuur prefikspuu jaoks
+class Prefikspuu {
 
-    for(auto & i : indeks->lapsed){
-        i = nullptr;
-    }
+public:
 
-    return indeks;
-}
+    // OLEKS VAJA SELGITUST, MIS TEEB??
+    Tipp* uus_tipp(){
+        Tipp* tahis = new Tipp;
+        tahis->sona_leidub = false;
 
-void lisa(Tipp* juur, const string& voti){
-    Tipp* indeks = juur;
-
-    for(char i : voti){
-        int ind = int(i)-'a';
-        if(indeks->lapsed[ind] == nullptr){
-            indeks->lapsed[ind] = uus_tipp();
+        for(auto & i : tahis->lapsed){
+            i = nullptr;
         }
-        indeks = indeks->lapsed[ind];
+        return tahis;
     }
-    indeks->sona_leidub = true;
-}
 
-Tipp* helper(Tipp* juur, string voti, int ind){
+    // MIKS??
+    Tipp* juur = uus_tipp();
+
+    // KIRJUTADA SELGITUSED!!
+    void leia_sonad(const string& voti, vector<string>&koik_sonad){
+        if(juur==nullptr) return;
+        Tipp* tahis = juur;
+
+        for(char i : voti){
+            int indeks = i-'a';
+            /* if child node at ind of current root is NULL this prefix do not exist in trie  */
+            if(tahis->lapsed[indeks] == nullptr) return;
+            tahis = tahis->lapsed[indeks];
+        }
+        /* if this prefix exist in trie then do BFS from current node to find all words  */
+        queue<pair<Tipp*,string> > q;
+        q.push(make_pair(tahis,voti));
+        string this_word;
+        while(!q.empty()){
+            tahis = q.front().first;
+            this_word = q.front().second;
+            /* if this is word ,then add it to the all_words(vector) */
+            if(tahis->sona_leidub) koik_sonad.push_back(this_word);
+            q.pop();
+            for(int i=0;i<tahestiku_pikkus;i++){
+                if(tahis->lapsed[i] !=nullptr ){
+                    q.push( make_pair(tahis->lapsed[i] , this_word+char(i+'a')));
+                }
+            }
+        }
+    }
+
+    // KIRJUTADA SELGITUSED!!
+    void lisa(const string& voti) {
+
+        Tipp* tahis = juur;
+
+        for(char i : voti) {
+            int indeks = i-'a';
+            if(tahis->lapsed[indeks] == nullptr){
+                tahis->lapsed[indeks] = uus_tipp();
+            }
+            tahis = tahis->lapsed[indeks];
+        }
+        tahis->sona_leidub = true;
+    }
+
+    // KORRAS!
+    void otsi(const string& voti){
+        // kui midagi ei sisestata, siis ei lõpetame
+        if(voti.empty()) return;
+    // kui sisestatakse otsitav sõna, siis väljastame kõik sõnad selles prefikspuus
+        vector<string> koik_sonad;
+        leia_sonad(voti,koik_sonad);
+    // kui sõnu ei leitud väljastame vastava teate
+        if(koik_sonad.empty()){
+            cout << "Uhtegi vastet ei leitud" << endl;
+            return;
+        }
+    // kui mõni sõna on leitud väljastame need
+        for(const auto & i : koik_sonad){
+            cout<<i<<endl;
+        }
+    }
+};
+
+// TEHA ÜMBER JA/VÕI KIRJUTADA SELGITUSED!!
+Tipp* helper(Tipp* juur, string voti, int indeks){
     // if tree is empty
     if(juur==nullptr) return nullptr;
     /*
@@ -59,7 +122,7 @@ Tipp* helper(Tipp* juur, string voti, int ind){
         }
     }
 
-    if(ind == voti.length()){
+    if(indeks == voti.length()){
         /* hit the end of key
          possibilty -> 1) this key is prefix of other key,
          int this case,set is_word of current root equals to false;
@@ -78,8 +141,8 @@ Tipp* helper(Tipp* juur, string voti, int ind){
         return juur;
 
     }
-    int pos = int(voti[ind])-'a';
-    juur->lapsed[pos] = helper(juur->lapsed[pos],voti,ind+1);
+    int pos = (voti[indeks])-'a';
+    juur->lapsed[pos] = helper(juur->lapsed[pos],voti,indeks+1);
 
     isempty = true;
     for(auto & i : juur->lapsed){
@@ -103,70 +166,12 @@ Tipp* helper(Tipp* juur, string voti, int ind){
     return juur;
 }
 
-void find_all_words( Tipp* juur, const string& voti, vector<string>&koik_sonad){
-    if(juur==nullptr) return ;
-    Tipp* indeks = juur;
-
-    for(char i : voti){
-        int ind = int(i)-'a';
-        /* if child node at ind of current root is NULL this prefix do not exist in trie  */
-        if( indeks->lapsed[ind] == nullptr ) return ;
-
-        indeks = indeks->lapsed[ind];
-    }
-
-    /* if this prefix exist in trie then do BFS from current node to find all words  */
-    queue<pair<Tipp*,string> > q;
-    q.push(make_pair(indeks,voti));
-    string this_word;
-    while(!q.empty()){
-        indeks = q.front().first;
-        this_word = q.front().second;
-        /* if this is word ,then add it to the all_words(vector) */
-        if(indeks->sona_leidub) koik_sonad.push_back( this_word );
-        q.pop();
-        for(int i=0;i<sona_pikkus;i++){
-            if( indeks->lapsed[i] !=nullptr ){
-                q.push( make_pair( indeks->lapsed[i] , this_word+char(i+int('a')) ) );
-            }
-        }
-    }
-}
-
-void auto_complete(Tipp* juur, const string& voti){
-    /* this function takes two parametes
-       1.) root node of trie
-       2.) key for which suggestion need to find.
-       this function prints all the words for which key is prefix.
-    */
-
-    /* if key is empty , no need to print */
-    if(voti.empty()) return;
-
-    /* if key is not empty , then we will print all words in trie for which key is PREFIX. */
-
-    vector<string> koik_sonad;
-
-    find_all_words(juur,voti,koik_sonad);
-
-    /* print all words */
-
-    if(koik_sonad.empty()){
-        cout << "Uhtegi vastet ei leitud" << endl;
-        return;
-    }
-
-    for(const auto & i : koik_sonad){
-        cout<<i<<endl;
-    }
-
-}
-
+// KORRAS
 void kuva_menuu(){
     cout << "1. Lisamine" << endl;
     cout << "2. Otsimine" << endl << endl;
 }
-
+// KORRAS
 unsigned int loe_valik(unsigned int &kasutaja_valik) {
     int valik;
     bool vigane_sisend;
@@ -183,19 +188,20 @@ unsigned int loe_valik(unsigned int &kasutaja_valik) {
         }
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    } while (vigane_sisend);
+    }
+    while (vigane_sisend);
     kasutaja_valik = valik;
     return kasutaja_valik;
 }
-
-void lisa_sonastik (string& failinimi, Tipp* juur) {
+// KORRAS
+void lisa_sonastik (string& failinimi, Prefikspuu puu) {
 
     string sona;
     ifstream sisend (failinimi);
 
     if (sisend.is_open()) {
         while (sisend >> sona) {
-            lisa (juur, sona);
+            puu.lisa (sona);
         }
     }
     else {
@@ -208,7 +214,7 @@ int main()
     unsigned int kasutaja_valik = 0;
     string sisend;
     string failinimi;
-    Tipp* juur = uus_tipp();
+    Prefikspuu puu;
 
     do {
         kuva_menuu();
@@ -216,12 +222,12 @@ int main()
         if (kasutaja_valik == 1) {
             cout << "Sisesta sonastiku failinimi: ";
             getline(cin, failinimi);
-            lisa_sonastik (failinimi, juur);
+            lisa_sonastik (failinimi, puu);
         }
         if (kasutaja_valik == 2) {
             cout << "Sisesta sone, mida soovid otsida: ";
             cin >> sisend;
-            auto_complete(juur, sisend);
+            puu.otsi(sisend);
         }
     }
     while (kasutaja_valik != 0);
