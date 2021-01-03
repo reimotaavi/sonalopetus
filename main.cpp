@@ -4,172 +4,76 @@
 #include <cmath>
 #include <limits>
 #include <fstream>
+#include <map>
 
 using namespace std;
+#define KONSTANT (26) //inglise sonastiku pikkus
+#define CHAR_TO_INDEX(c) ((int)c - (int)'a') //muudame tahemargi numbriliseks vaartuseks
 
-#define KONSTANT (32)
-#define CHAR_TO_INDEX(c) ((int)c - (int)'a')
-
-struct Puu{
-    struct Puu *lapsed[KONSTANT];
+class Tipp{
+public:
+    Tipp *lapsed[KONSTANT]; //laste loend
     bool sonalopp;
 };
 
-struct Puu *solm(void){
-    struct Puu *uus_solm = new Puu;
-    uus_solm->sonalopp = false;
-    for(int i = 0; i < KONSTANT; i++){
-        uus_solm->lapsed[i] = NULL;
+class Tipp *Prefiksipuu(){
+    Tipp *tuhi_puuoks = new Tipp; //loome oksa
+    tuhi_puuoks->sonalopp = true; //maarame sonalopu
+
+    for(auto & i : tuhi_puuoks->lapsed){ //taidame oksa tuhjade kohtadega
+        i = nullptr;
     }
-}
+    return tuhi_puuoks;
 
-void lisa(struct Puu *juur, const string voti){
-    struct Puu *Crawl = juur;
+};
 
-    for(int tase = 0; tase < voti.length(); tase++){
-        int indeks = CHAR_TO_INDEX(voti[tase]);
-        if(!Crawl->lapsed[indeks]){
-            Crawl->lapsed[indeks] = solm();
+void lisa(Tipp *juur, const string& lisatav_sona){
+    Tipp *taidetud_puuoks = juur;
+    for(char tase : lisatav_sona){
+        int indeks = CHAR_TO_INDEX(tase); //loome tahele vastava numbrilise vaartuse
+        if (!taidetud_puuoks->lapsed[indeks]) {//kui vastavat oksa ei leidu siis loome oksa
+            taidetud_puuoks->lapsed[indeks] = Prefiksipuu();
         }
-        Crawl = Crawl->lapsed[indeks];
+        taidetud_puuoks = taidetud_puuoks->lapsed[indeks]; //maarame oksale vastava tahe
     }
-    Crawl->sonalopp = true;
+    taidetud_puuoks->sonalopp = false; //maarame koha mitte sonalopuks
 }
 
-bool otsi(struct Puu *juur, const string voti){
-    int pikkus = voti.length();
-    struct Puu *Crawl = juur;
-    for (int tase = 0; tase < pikkus; tase++)
-    {
-        int indeks = CHAR_TO_INDEX(voti[tase]);
 
-        if (!Crawl->lapsed[indeks])
-            return false;
 
-        Crawl = Crawl->lapsed[indeks];
-    }
+vector<string> lisa_sonastik() {
 
-    return (Crawl != NULL && Crawl->sonalopp);
-}
-
-bool viimane_solm(struct Puu* juur)
-{
-    for (int i = 0; i < KONSTANT; i++)
-        if (juur->lapsed[i])
-            return 0;
-    return 1;
-}
-
-void sonalopetus(struct Puu* juur, string otsitav){
-    if (juur->sonalopp){
-        cout << otsitav;
-        cout << endl;
-    }
-    if (viimane_solm(juur)){
-        return;
-    }
-
-    for (int i = 0; i < KONSTANT; i++){
-        if (juur->lapsed[i]){
-            otsitav.push_back(97 + i);
-            sonalopetus(juur->lapsed[i], otsitav);
-            otsitav.pop_back();
-        }
-    }
-}
-
-int valjasta(Puu* juur, const string query)
-{
-    struct Puu* Crawl = juur;
-
-    int tase;
-    int pikkus = query.length();
-    for (tase = 0; tase < pikkus; tase++){
-        int indeks = CHAR_TO_INDEX(query[tase]);
-        if (!Crawl->lapsed[indeks]) return 0;
-
-        Crawl = Crawl->lapsed[indeks];
-    }
-
-    bool isWord = (Crawl->sonalopp == true);
-    bool isLast = viimane_solm(Crawl);
-    if (isWord && isLast){
-        cout << query << endl;
-        return -1;
-    }
-
-    if (!isLast){
-        string prefix = query;
-        sonalopetus(Crawl, prefix);
-        return 1;
-    }
-}
-
-void kuva_menuu(){
-    cout << "1. Lisamine" << endl;
-    cout << "2. Sonastik" << endl;
-    cout << "3. Otsimine" << endl;
-}
-
-int loe_valik(unsigned int &kasutaja_valik) {
-    int valik;
-    bool vigane_sisend;
-
-    do {
-        vigane_sisend = false;
-        cout << "Sisestage valik: ";
-        cin >> valik;
-
-        if (cin.fail() || valik < 0 || valik > 3 || valik != ceil(valik)) {
-            cout << "Viga! Sisestage korrektne valik!" << endl;
-            vigane_sisend = true;
-            cin.clear();
-        }
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-    } while (vigane_sisend);
-    kasutaja_valik = valik;
-    return kasutaja_valik;
-}
-
-void lisa_sonastik (string& failinimi, Puu* juur) {
-
+    vector<string> sonad;
+    string failinimi = "sonastik.txt";
     string sona;
     ifstream sisend (failinimi);
 
     if (sisend.is_open()) {
         while (sisend >> sona) {
-            lisa (juur, sona);
+            sonad.push_back(sona);
         }
+        return sonad;
     }
     else {
         cout << "Sellist faili ei leitud!" << endl;
+        return sonad;
     }
 }
 
 int main(){
-    struct Puu* juur = solm();
-    unsigned int kasutaja_valik = 0;
+
+    vector<string> sonad = lisa_sonastik();
+    Prefiksipuu puu;
+    puu.loo_puu(sonad);
     string sisend;
-    string failinimi;
-    do {
-        kuva_menuu();
-        loe_valik(kasutaja_valik);
-        if (kasutaja_valik == 1) {
-            cout << "Sisesta sona, mida soovid lisada: ";
-            cin >> sisend;
-            lisa(juur, sisend);
-        }
-        if (kasutaja_valik == 2) {
-            cout << "Sisesta sonastiku failinimi: ";
-            getline(cin, failinimi);
-            lisa_sonastik (failinimi, juur);
-        }
-        if (kasutaja_valik == 3) {
-            cout << "Sisesta sone, mida soovid otsida: ";
-            cin >> sisend;
-            valjasta(juur, sisend);
-        }
-    } while (kasutaja_valik != 0);
-    cout << "Aitah, et kasutasid programmi!";
+
+    cout << "Sisesta: ";
+    cin >> sisend;
+
+
+//    do {
+//        cout << "Sisesta otsing, voi '-', et valjuda programmist: ";
+//        cin >> sisend;
+//    } while (sisend != "-");
+//    cout << "Aitah, et kasutasid programmi!";
 }
