@@ -118,7 +118,7 @@ int main(){
     do {
         cout << endl << "Sisesta otsing, voi '-', et valjuda programmist: ";
         cin >> sisend;
-        puu.otsi(sisend);
+        if(sisend != "-") puu.otsi(sisend);
     } while (sisend != "-");
     cout << "Aitah, et kasutasid programmi!";
 }
