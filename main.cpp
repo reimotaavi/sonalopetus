@@ -1,10 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cmath>
-#include <limits>
 #include <fstream>
-#include <map>
 
 using namespace std;
 #define KONSTANT (26) //inglise sonastiku pikkus
@@ -21,17 +18,17 @@ public:
 
     static Tipp* prefikspuu () {
         Tipp *tuhi_puuoks = new Tipp; //loome oksa
-        tuhi_puuoks->sonalopp = true; //maarame sonalopu
+        tuhi_puuoks->sonalopp = false; //maarame sonalopu
 
-        for(auto & i : tuhi_puuoks->lapsed){ //taidame oksa tuhjade kohtadega
-            i = nullptr;
+        for(int i = 0; i < KONSTANT; i++){ //taidame oksa tuhjade kohtadega
+            tuhi_puuoks->lapsed[i] = nullptr;
         }
         return tuhi_puuoks;
     }
 
-    void lisa(Tipp *juur, vector<string> lisatavad_sonad) {
-        Tipp *taidetud_puuoks = juur;
-        for(auto lisatav_sona : lisatavad_sonad) {
+    static void lisa(Tipp *juur, const vector<string>& lisatavad_sonad) {
+        for (const auto& lisatav_sona : lisatavad_sonad) {
+            Tipp *taidetud_puuoks = juur;
             for (char tase : lisatav_sona) {
                 int indeks = CHAR_TO_INDEX(tase); //loome tahele vastava numbrilise vaartuse
                 if (!taidetud_puuoks->lapsed[indeks]) {//kui vastavat oksa ei leidu siis loome oksa
@@ -39,7 +36,7 @@ public:
                 }
                 taidetud_puuoks = taidetud_puuoks->lapsed[indeks]; //maarame oksale vastava tahe
             }
-            taidetud_puuoks->sonalopp = false; //maarame koha mitte sonalopuks
+            taidetud_puuoks->sonalopp = true; //maarame koha mitte sonalopuks
         }
     }
 
@@ -58,39 +55,37 @@ public:
         }
         if(viimane_solm(juur)) return; //kui on oksa lopp, siis valjume funktsioonist
 
-        for(auto & i : juur->lapsed){ //kui solmel on veel lapsi, siis teeme sonalopetust ka lastele
-            if(i){
-                otsitav.push_back(97 + 1);
-                sonalopetus(i, otsitav);
-                otsitav.pop_back();
+        for(int i = 0; i < KONSTANT; i++){ //kui solmel on veel lapsi, siis teeme sonalopetust ka lastele
+            if(juur->lapsed[i]){
+                otsitav.push_back(97 + i); //paneme sonale jargmise tahe loppu
+                sonalopetus(juur->lapsed[i], otsitav); //otsime saadud uuele sonale sonalopetust
+                otsitav.pop_back(); //eemaldame tahe
             }
         }
     }
 
     void otsi(Tipp* juur, const string& otsing){
         Tipp* taidetud_puuoks = juur;
-        int tase;
-        int sona_pikkus = otsing.length();
-        for(tase = 0; tase < sona_pikkus; tase++){
-            int indeks = CHAR_TO_INDEX(otsing[tase]);
-            if(!taidetud_puuoks->lapsed[indeks]){ //kui otsingut pole puus, siis ei valjasta midagi
+        for(char tase : otsing){
+            int indeks = CHAR_TO_INDEX(tase);
+            if(!taidetud_puuoks->lapsed[indeks]){ //kui otsingut pole puus
+                cout << "Otsingule ei leidunud vasteid!" << endl;
                 return;
             }
+            taidetud_puuoks = taidetud_puuoks->lapsed[indeks];
         }
-        bool on_sona = taidetud_puuoks->sonalopp;
-        bool on_viimane_solm = viimane_solm(taidetud_puuoks);
-        if(on_sona && on_viimane_solm){
+        bool on_sona = taidetud_puuoks->sonalopp; //vaatame kas on sonalopp
+        bool on_viimane_solm = viimane_solm(taidetud_puuoks); //vaatame, kas solmel on lapsi
+        if(on_sona && on_viimane_solm){ //vaatame kas otsingule on ainult 1 vaste puus
             cout << otsing << endl;
         }
-        if(!on_viimane_solm){
+        if(!on_viimane_solm){ //kui ei ole viimane solm, siis otsime sonalopetusi
             string otsitav_sona = otsing;
             sonalopetus(taidetud_puuoks, otsitav_sona);
         }
     }
 
 };
-
-
 
 vector<string> lisa_sonastik() {
 
@@ -116,16 +111,13 @@ int main(){
     vector<string> sonad = lisa_sonastik();
     string sisend;
     Prefiksipuu puu;
-    Tipp *juur = puu.prefikspuu();
-    puu.lisa(juur, sonad);
-    cout << "Sisesta: ";
-    cin >> sisend;
-    puu.otsi(juur, sisend);
+    Tipp* juur = Prefiksipuu::prefikspuu();
+    Prefiksipuu::lisa(juur, sonad);
 
-
-//    do {
-//        cout << "Sisesta otsing, voi '-', et valjuda programmist: ";
-//        cin >> sisend;
-//    } while (sisend != "-");
-//    cout << "Aitah, et kasutasid programmi!";
+    do {
+        cout << endl << "Sisesta otsing, voi '-', et valjuda programmist: ";
+        cin >> sisend;
+        puu.otsi(juur, sisend);
+    } while (sisend != "-");
+    cout << "Aitah, et kasutasid programmi!";
 }
